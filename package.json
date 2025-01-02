@@ -1,0 +1,21 @@
+{
+  "name": "chrome-extension-calendar-event",
+  "version": "1.0.0",
+  "description": "A Chrome extension that allows users to create calendar events and download them in iCalendar format.",
+  "main": "src/background.js",
+  "scripts": {
+    "build": "echo 'Build step can be added here'",
+    "test": "echo 'Test step can be added here'"
+  },
+  "keywords": [
+    "chrome",
+    "extension",
+    "calendar",
+    "event",
+    "ics"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
