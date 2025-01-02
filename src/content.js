@@ -3,6 +3,10 @@ const isDevelopment =
   window.location.hostname === "127.0.0.1";
 const isShepherdVet = window.location.hostname === "app.shepherd.vet";
 
+function debugLog(message, data = null) {
+  console.log(`[ShepherdSync] ${message}`, data || "");
+}
+
 // DOM Helpers
 function safeQuerySelector(parent, selector, defaultValue = "") {
   try {
@@ -243,6 +247,33 @@ function extractAppointmentData(modal) {
   }
 }
 
+function handleCalendarButtonClick(modal) {
+  if (!chrome?.runtime?.sendMessage) {
+    console.error("Chrome APIs not available");
+    return;
+  }
+
+  try {
+    const appointmentData = extractAppointmentData(modal);
+    // Send message directly without tabs query
+    chrome.runtime.sendMessage(
+      {
+        action: "createEvent",
+        eventData: appointmentData,
+      },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Message error:", chrome.runtime.lastError);
+          return;
+        }
+        console.log("Calendar event created:", response);
+      }
+    );
+  } catch (error) {
+    console.error("Error handling calendar button click:", error);
+  }
+}
+
 // Event Handlers
 function handleModal(modal) {
   if (!modal) return;
@@ -264,28 +295,9 @@ function handleModal(modal) {
     const calendarButton = createCalendarButton();
     if (!calendarButton) return;
 
-    calendarButton.addEventListener("click", () => {
-      try {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          const appointmentData = extractAppointmentData(modal);
-          chrome.runtime.sendMessage(
-            {
-              action: "createEvent",
-              tabId: tabs[0].id,
-              eventData: appointmentData,
-            },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                console.error("Tab context error:", chrome.runtime.lastError);
-                return;
-              }
-            }
-          );
-        });
-      } catch (error) {
-        console.error("Error handling calendar button click:", error);
-      }
-    });
+    calendarButton.addEventListener("click", () =>
+      handleCalendarButtonClick(modal)
+    );
 
     footerSection.insertBefore(calendarButton, cancelButton);
   } catch (error) {
@@ -314,21 +326,29 @@ if (isDevelopment) {
   }
 } else if (isShepherdVet) {
   const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      if (mutation.addedNodes) {
-        mutation.addedNodes.forEach((node) => {
-          if (node.classList?.contains("ReactModal__Content--after-open")) {
-            if (node.querySelector(".is-schedule")) {
-              handleModal(node);
-            }
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+        // Look for .is-schedule first
+        const scheduleSection = node.classList?.contains("is-schedule")
+          ? node
+          : node.querySelector(".is-schedule");
+
+        if (scheduleSection) {
+          // Find parent modal
+          const modalContent = scheduleSection.closest(".ReactModal__Content");
+          if (modalContent) {
+            handleModal(modalContent);
           }
-        });
-      }
-    }
+        }
+      });
+    });
   });
 
   observer.observe(document.body, {
     childList: true,
     subtree: true,
+    attributes: false,
   });
 }
