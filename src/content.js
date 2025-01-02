@@ -2,6 +2,7 @@ const isDevelopment =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1";
 const isShepherdVet = window.location.hostname === "app.shepherd.vet";
+const isSchedulePage = window.location.pathname === "/schedule";
 
 function debugLog(message, data = null) {
   console.log(`[ShepherdSync] ${message}`, data || "");
@@ -223,7 +224,7 @@ function extractAppointmentData(modal) {
 
     const fullAddress =
       clientInfo.address.street && clientInfo.address.details
-        ? `${clientInfo.address.street}, ${clientInfo.address.details}`
+        ? `${clientInfo.address.street}\n${clientInfo.address.details}`
         : "";
 
     return {
@@ -324,7 +325,7 @@ if (isDevelopment) {
       handleModal(editModal);
     }
   }
-} else if (isShepherdVet) {
+} else if (isShepherdVet && isSchedulePage) {
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
