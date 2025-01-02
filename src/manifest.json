@@ -17,5 +17,7 @@
       "js": ["content.js"]
     }
   ],
-  "icons": {}
+  "icons": {
+    "128": "icons/icon128.png"
+  }
 }
